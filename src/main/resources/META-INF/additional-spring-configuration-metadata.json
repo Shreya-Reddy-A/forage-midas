@@ -1,0 +1,22 @@
+{"properties": [
+  {
+    "name": "spring.kafka.general.kafka-topic",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.kafka.general.kafka-topic'"
+  },
+  {
+    "name": "general.kafka-topic",
+    "type": "java.lang.String",
+    "description": "A description for 'general.kafka-topic'"
+  },
+  {
+    "name": "spring.incentive.service-url",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.incentive.service-url'"
+  },
+  {
+    "name": "incentive.service-url",
+    "type": "java.lang.String",
+    "description": "A description for 'incentive.service-url'"
+  }
+]}

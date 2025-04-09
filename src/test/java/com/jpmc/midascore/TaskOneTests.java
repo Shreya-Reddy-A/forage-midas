@@ -4,8 +4,12 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.context.SpringBootTest;
+//import org.springframework.test.context.TestPropertySource;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+//@TestPropertySource(locations = "classpath:application.yml")
+
+
 class TaskOneTests {
     static final Logger logger = LoggerFactory.getLogger(TaskOneTests.class);
 
@@ -27,3 +31,6 @@ class TaskOneTests {
     }
 
 }
+
+ 
+

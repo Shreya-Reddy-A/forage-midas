@@ -5,12 +5,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.kafka.test.context.EmbeddedKafka;
+//import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.annotation.DirtiesContext;
+//import org.springframework.kafka.test.context.EmbeddedKafka;
+import com.jpmc.midascore.component.DatabaseConduit;
+//import org.junit.jupiter.api.Test;
 
-@SpringBootTest
+
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+//@TestPropertySource(locations = "classpath:application.yml")
 @DirtiesContext
-@EmbeddedKafka(partitions = 1, brokerProperties = {"listeners=PLAINTEXT://localhost:9092", "port=9092"})
+//@EmbeddedKafka(partitions = 1, brokerProperties = {"listeners=PLAINTEXT://localhost:9092", "port=9092"})
+
 public class TaskFourTests {
     static final Logger logger = LoggerFactory.getLogger(TaskFourTests.class);
 
@@ -22,6 +29,9 @@ public class TaskFourTests {
 
     @Autowired
     private FileLoader fileLoader;
+    @Autowired
+    private DatabaseConduit databaseConduit;
+
 
     @Test
     void task_four_verifier() throws InterruptedException {
@@ -31,7 +41,7 @@ public class TaskFourTests {
             kafkaProducer.send(transactionLine);
         }
         Thread.sleep(2000);
-
+        databaseConduit.printWilburBalance();
 
         logger.info("----------------------------------------------------------");
         logger.info("----------------------------------------------------------");

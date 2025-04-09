@@ -1,0 +1,35 @@
+server:
+  port: 33400
+
+general.kafka-topic: transaction-topic
+spring:
+  kafka:
+    producer:
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: midas-core-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        "[spring.json.trusted.packages]": com.jpmc.midascore
+        "[spring.json.value.default.type]": com.jpmc.midascore.foundation.Transaction
+
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+        
+incentive:
+  service-url: http://localhost:8080/incentive
+        
+
