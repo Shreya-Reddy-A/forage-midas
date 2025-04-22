@@ -33,3 +33,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+
+src/main/resources/META-INF/spring-configuration-metadata.json
+
+/services/transaction-incentive-api.jar
+
+
+
