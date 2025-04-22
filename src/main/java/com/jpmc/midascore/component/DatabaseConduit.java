@@ -3,9 +3,6 @@ package com.jpmc.midascore.component;
 import com.jpmc.midascore.entity.UserRecord;
 import com.jpmc.midascore.entity.TransactionRecord;
 import com.jpmc.midascore.repository.UserRepository;
-import com.jpmc.midascore.service.IncentiveService;
-import com.jpmc.midascore.service.TransactionService;
-import com.jpmc.midascore.service.UserService;
 import com.jpmc.midascore.repository.TransactionRecordRepository;
 import org.springframework.stereotype.Component;
 import java.util.Optional;
@@ -14,111 +11,84 @@ import com.jpmc.midascore.entity.Incentive;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.client.RestTemplate;
 import java.util.stream.StreamSupport;
-//import java.util.stream.Stream;
 
 @Component
 public class DatabaseConduit {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final TransactionRecordRepository transactionRepository;
 
     @Autowired
-    private TransactionRecordRepository transactionRepository;
+    private RestTemplate restTemplate;
 
-    @Autowired
-    private UserService userService;
+    private static final String INCENTIVE_URL = "http://localhost:8080/incentive";
 
-    @Autowired
-    private TransactionService transactionService;
+    public DatabaseConduit(UserRepository userRepository,
+                           TransactionRecordRepository transactionRepository) {
+        this.userRepository = userRepository;
+        this.transactionRepository = transactionRepository;
+    }
 
-    @Autowired
-    private IncentiveService incentiveService;
-
-    // ✅ Method 1: Transaction by IDs
     public void processTransaction(Long senderId, Long recipientId, float amount) {
-        UserRecord sender = userRepository.findById(senderId)
-                .orElseThrow(() -> new RuntimeException("Sender not found"));
+        Optional<UserRecord> senderOpt = userRepository.findById(senderId);
+        Optional<UserRecord> recipientOpt = userRepository.findById(recipientId);
 
-        UserRecord recipient = userRepository.findById(recipientId)
-                .orElseThrow(() -> new RuntimeException("Recipient not found"));
+        if (senderOpt.isEmpty() || recipientOpt.isEmpty()) return;
 
-        if (sender.getBalance() < amount) {
-            throw new RuntimeException("Insufficient balance");
-        }
+        UserRecord sender = senderOpt.get();
+        UserRecord recipient = recipientOpt.get();
 
+        if (sender.getBalance() < amount) return;
+
+        // 💸 Log balances BEFORE transaction
         System.out.println("💸 BEFORE Transaction");
         System.out.println("Sender: " + sender.getName() + " | Balance: " + sender.getBalance());
         System.out.println("Recipient: " + recipient.getName() + " | Balance: " + recipient.getBalance());
 
-        // Deduct sender balance
+        // Deduct from sender
         sender.setBalance(sender.getBalance() - amount);
 
-        // Call Incentive service
-        float incentiveAmount = incentiveService.getIncentiveAmount(senderId, recipientId, amount);
+        // Call Incentive API
+        Transaction transactionRequest = new Transaction(sender.getId(), recipient.getId(), amount);
+        Incentive incentive = restTemplate.postForObject(INCENTIVE_URL, transactionRequest, Incentive.class);
+        float incentiveAmount = (incentive != null) ? incentive.getAmount() : 0f;
+
         System.out.println("🎁 Incentive received: " + incentiveAmount);
 
-        // Add to recipient balance
+        // Add to recipient: amount + incentive
         recipient.setBalance(recipient.getBalance() + amount + incentiveAmount);
 
-        // Save updated users
+        // Save updated balances
         userRepository.save(sender);
         userRepository.save(recipient);
 
-        // Save transaction record
-        TransactionRecord transactionRecord = new TransactionRecord(sender, recipient, amount, incentiveAmount);
-        transactionRepository.save(transactionRecord);
-
+        // 💰 Log balances AFTER transaction
         System.out.println("💰 AFTER Transaction");
         System.out.println("Sender: " + sender.getName() + " | Balance: " + sender.getBalance());
         System.out.println("Recipient: " + recipient.getName() + " | Balance: " + recipient.getBalance());
-    }
-
-    // ✅ Method 2: Transaction by UserRecord objects
-    public void processTransaction(UserRecord sender, UserRecord recipient, float amount) {
-        if (sender.getBalance() < amount) {
-            throw new RuntimeException("Insufficient balance");
-        }
-
-        System.out.println("💸 BEFORE Transaction");
-        System.out.println("Sender: " + sender.getName() + " | Balance: " + sender.getBalance());
-        System.out.println("Recipient: " + recipient.getName() + " | Balance: " + recipient.getBalance());
-
-        // Deduct sender balance
-        sender.setBalance(sender.getBalance() - amount);
-
-        // Call Incentive service
-        float incentiveAmount = incentiveService.getIncentiveAmount(sender.getId(), recipient.getId(), amount);
-        System.out.println("🎁 Incentive received: " + incentiveAmount);
-
-        // Add to recipient balance
-        recipient.setBalance(recipient.getBalance() + amount + incentiveAmount);
-
-        // Save updated users
-        userRepository.save(sender);
-        userRepository.save(recipient);
 
         // Save transaction record
-        TransactionRecord transactionRecord = new TransactionRecord(sender, recipient, amount, incentiveAmount);
-        transactionRepository.save(transactionRecord);
+        TransactionRecord transaction = new TransactionRecord(amount, sender, recipient);
+        transaction.setIncentive(incentiveAmount);
+        transactionRepository.save(transaction);
 
-        System.out.println("💰 AFTER Transaction");
-        System.out.println("Sender: " + sender.getName() + " | Balance: " + sender.getBalance());
-        System.out.println("Recipient: " + recipient.getName() + " | Balance: " + recipient.getBalance());
+        System.out.println("✅ Transaction saved: " + transaction);
     }
 
-    // ✅ Optional save user method
     public void save(UserRecord user) {
         userRepository.save(user);
-
     }
+
+    // 🐽 Use this to print Wilbur’s final balance
     public void printWilburBalance() {
-        Optional<UserRecord> wilburOptional = userRepository.findByName("Wilbur");
-        if (wilburOptional.isPresent()) {
-            UserRecord wilbur = wilburOptional.get();
-            System.out.println("🐷 Wilbur's Balance: " + wilbur.getBalance());
+        Optional<UserRecord> wilburOpt = StreamSupport.stream(userRepository.findAll().spliterator(), false)
+            .filter(u -> u.getName().equalsIgnoreCase("wilbur"))
+            .findFirst();
+
+        if (wilburOpt.isPresent()) {
+            System.out.println("🐽 FINAL BALANCE (WILBUR): " + wilburOpt.get().getBalance());
         } else {
-            System.out.println("🐷 Wilbur not found in the database.");
+            System.out.println("❌ Wilbur not found in DB.");
         }
     }
-    
 }

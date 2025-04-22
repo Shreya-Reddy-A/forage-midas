@@ -13,7 +13,7 @@ public class TransactionRecord {
     private float amount;
 
     @Column(nullable = false)
-    private float incentive;
+    private float incentive; 
 
     @ManyToOne
     @JoinColumn(name = "sender_id", nullable = false)
@@ -23,29 +23,22 @@ public class TransactionRecord {
     @JoinColumn(name = "recipient_id", nullable = false)
     private UserRecord recipient;
 
-    // Protected no-args constructor for JPA
     protected TransactionRecord() {
     }
 
-    // Constructor with all fields
-    public TransactionRecord(UserRecord sender, UserRecord recipient, float amount, float incentive) {
+    public TransactionRecord(float amount, UserRecord sender, UserRecord recipient) {
+        this.amount = amount;
         this.sender = sender;
         this.recipient = recipient;
-        this.amount = amount;
-        this.incentive = incentive;
+        this.incentive = 0f;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }
 
     public float getAmount() {
         return amount;
-    }
-
-    public void setAmount(float amount) {
-        this.amount = amount;
     }
 
     public float getIncentive() {
@@ -60,12 +53,16 @@ public class TransactionRecord {
         return sender;
     }
 
-    public void setSender(UserRecord sender) {
-        this.sender = sender;
-    }
-
     public UserRecord getRecipient() {
         return recipient;
+    }
+
+    public void setAmount(float amount) {
+        this.amount = amount;
+    }
+
+    public void setSender(UserRecord sender) {
+        this.sender = sender;
     }
 
     public void setRecipient(UserRecord recipient) {
@@ -78,8 +75,8 @@ public class TransactionRecord {
                 "id=" + id +
                 ", amount=" + amount +
                 ", incentive=" + incentive +
-                ", sender=" + (sender != null ? sender.getName() : "null") +
-                ", recipient=" + (recipient != null ? recipient.getName() : "null") +
+                ", sender=" + sender.getName() +
+                ", recipient=" + recipient.getName() +
                 '}';
     }
 }
